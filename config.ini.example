@@ -1,0 +1,25 @@
+[EmbedSettings]
+embed_color = 0xFFFFFF
+footer_text = TrustMM | Secure P2P Escrow Bot
+icon_url = 
+thumbnail_url = 
+loading_url = https://www.icegif.com/wp-content/uploads/2023/07/icegif-1263.gif
+ltc_image = https://w7.pngwing.com/pngs/786/58/png-transparent-coin-crypto-lite-litecion-ltc-crypto-currency-and-coin-icon.png
+tick_image = https://e7.pngegg.com/pngimages/270/706/png-clipart-check-mark-computer-icons-green-tick-mark-angle-text-thumbnail.png
+
+[Token]
+TOKEN = YOUR_DISCORD_BOT_TOKEN_HERE
+
+[APIKeys]
+TATUM_APIKEY = YOUR_TATUM_API_KEY_HERE
+
+[ChannelSettings]
+mm_log_channel_id = YOUR_LOG_CHANNEL_ID
+category_id = YOUR_CATEGORY_ID
+
+[RoleSettings]
+admin_role_id = YOUR_ADMIN_ROLE_ID
+client_role_id = YOUR_CLIENT_ROLE_ID
+
+[DisplaySettings]
+show_buyer_seller = True
