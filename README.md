@@ -14,7 +14,10 @@
 
 - **Creación Automatizada de Tickets**: Creación instantánea de canales de texto privados dedicados exclusivamente a cada transacción entre Comprador y Vendedor.
 - **Selección de Roles Dinámica**: Interfaz intuitiva con botones interactivos para definir quién actúa como Comprador y quién como Vendedor.
-- **Conversión de Divisas en Tiempo Real**: Integración directa con la API pública de Coinbase para convertir acuerdos en USD a su equivalente en LTC en tiempo real.
+- **Modales Interactivos Seguros**: Transición de entradas por mensajes de texto (`wait_for`) a modales emergentes interactivos integrados en Discord para configurar detalles del trato y capturar direcciones de monedero de manera limpia y sin interferencias en el chat.
+- **Soporte de Divisas Personalizables**: Permite al vendedor seleccionar su divisa fiat preferida (como USD, EUR, GBP, ARS, etc.) al configurar la transacción, obteniendo la tasa de conversión a LTC en tiempo real mediante la API de Coinbase.
+- **Validación Avanzada de Direcciones LTC**: Validación automatizada mediante expresiones regulares (Regex) de direcciones Litecoin en mainnet (formatos Legacy `L...`, P2SH `M...` y Bech32 `ltc1...`) para evitar transacciones a direcciones inválidas o incorrectas.
+- **Sanitización Robusta de Montos**: Capacidad de procesar y limpiar cantidades monetarias ingresadas por el usuario eliminando automáticamente espacios, símbolos de moneda ($, €, £, etc.) y estandarizando separadores decimales.
 - **Monitoreo Automático de la Blockchain**: Consulta periódica a través de la API de Tatum para detectar transacciones pendientes y confirmadas en la blockchain de Litecoin de forma automatizada.
 - **Gestión Segura de Fondos**: Permite liberar los fondos al vendedor (deduciendo comisiones de red estándar) o reembolsarlos al comprador mediante mutuo acuerdo.
 - **Transcripciones HTML del Chat**: Generación automática de auditorías en HTML utilizando `chat-exporter` que son enviadas a los mensajes directos (DMs) de ambas partes al completarse o cancelarse la transacción.
@@ -123,7 +126,10 @@ Para más detalles, consulta el archivo [LICENSE](file:///c:/Users/alors/Downloa
 
 - **Automated Ticket/Channel Creation**: Secure, dedicated channels created instantly for Comprador/Vendedor (Buyer/Seller) deals.
 - **Dynamic Role Selection**: Simple interface buttons for identifying each participant's role (Buyer vs. Seller).
-- **Real-Time Exchange Rates**: Integrates with Coinbase's public exchange rate API to convert USD agreements to LTC dynamically.
+- **Secure Interactive Modals**: Replaces chat-based text listeners (`wait_for` loops) with clean Discord pop-up modals for setting deal parameters and collecting payout wallet addresses.
+- **Custom Fiat Currency Support**: Allows the user to specify their preferred fiat currency (e.g., USD, EUR, GBP, ARS) at transaction setup, querying the Coinbase API for real-time LTC conversion rates.
+- **Advanced LTC Address Validation**: Automated Regex validation for mainnet Litecoin addresses supporting Legacy (`L...`), P2SH (`M...`), and Bech32 (`ltc1...`) formats to prevent transfer mistakes.
+- **Robust Amount Sanitization**: Strips currency symbols ($, €, £, etc.), spaces, and formats decimal separators automatically from user input to ensure robust and error-free amount parsing.
 - **Automatic Blockchain Monitoring**: Periodically tracks temporary wallets via Tatum API to detect pending and confirmed deposits.
 - **Secure Funds Management**: Funds can be released to the seller (deducting network fees) or refunded back to the buyer through mutual agreement.
 - **HTML Chat Transcripts**: Uses `chat-exporter` to auto-generate beautiful HTML audit logs of completed/cancelled transactions and DMs them to both parties.
