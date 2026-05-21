@@ -218,3 +218,5 @@ This project is licensed under the **OBLIGATORY ATTRIBUTION FREE SOFTWARE LICENS
 4. **Commercial Prohibition**: Commercial sale, distribution, or economic exploitation of this Software or its derivatives is strictly prohibited without prior written consent.
 
 For more details, see the [LICENSE](file:///c:/Users/alors/Downloads/Opp Auto MM/LICENSE) file.
+
+<!-- YOLO Achievement -->
