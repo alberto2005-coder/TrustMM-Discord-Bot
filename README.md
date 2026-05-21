@@ -4,7 +4,7 @@
 
 ---
 
-# <a name="español"></a>🇪🇸 Español
+## Español
 
 **TrustMM** es un bot de Discord seguro y totalmente automatizado para actuar como intermediario o **Escrow / Middleman** en transacciones peer-to-peer (P2P) de **Litecoin (LTC)**. Elimina la necesidad de intermediarios manuales en las transacciones de criptomonedas mediante el uso de monederos temporales ("hot-wallets") y el monitoreo de transacciones entrantes directamente en la blockchain en tiempo real.
 
@@ -36,18 +36,22 @@
 ## ⚙️ Instrucciones de Configuración
 
 ### 1. Clonar el Repositorio y Navegar a la Carpeta
+
 ```bash
 git clone <url-de-tu-repositorio>
 cd <carpeta-del-repositorio>
 ```
 
 ### 2. Instalar las Dependencias
+
 Instala las librerías de Python requeridas ejecutando:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Configurar el archivo `config.ini`
+
 Crea o edita el archivo `config.ini` en la raíz del proyecto con tus credenciales y configuraciones:
 
 ```ini
@@ -79,7 +83,9 @@ show_buyer_seller = True
 ```
 
 ### 4. Iniciar el Bot
+
 Ejecuta el bot usando Python en tu terminal:
+
 ```bash
 python main.py
 ```
@@ -102,13 +108,14 @@ python main.py
 
 Este proyecto está bajo la **LICENCIA DE SOFTWARE LIBRE CON ATRIBUCIÓN OBLIGATORIA (LICENCIA ALBERTO ORTIZ)**.
 
-### Resumen de la Licencia:
+### Resumen de la Licencia
+
 1. **Uso Gratuito**: Permitido para fines personales y no comerciales.
 2. **Bifurcaciones (Forks) y Modificaciones**: Permitidos en plataformas públicas (como GitHub).
 3. **Atribución Obligatoria**:
    - Se deben conservar todos los avisos de copyright y el nombre de **Alberto Ortiz** en el código fuente y las respuestas del bot.
    - Cualquier modificación o bifurcación debe declarar explícitamente al inicio de su documentación y en la interfaz:
-     > *"Este Software es una bifurcación/modificación basada en el proyecto original 'TrustMM' desarrollado por Alberto Ortiz (https://github.com/alberto2005-coder)."*
+     > *"Este Software es una bifurcación/modificación basada en el proyecto original 'TrustMM' desarrollado por Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
 4. **Prohibición Comercial**: Queda estrictamente prohibida la explotación comercial o venta de este Software o sus derivados sin consentimiento previo por escrito.
 
 Para más detalles, consulta el archivo [LICENSE](file:///c:/Users/alors/Downloads/Opp Auto MM/LICENSE).
@@ -116,7 +123,7 @@ Para más detalles, consulta el archivo [LICENSE](file:///c:/Users/alors/Downloa
 ---
 ---
 
-# <a name="english"></a>🇺🇸 English
+## English
 
 **TrustMM** is a secure, fully automated peer-to-peer (P2P) **Litecoin (LTC) Escrow / Middleman** Discord bot. It eliminates the need for manual intermediaries in cryptocurrency transactions by using temporary hot-wallets and monitoring incoming transactions directly on the blockchain in real-time.
 
@@ -148,18 +155,22 @@ Para más detalles, consulta el archivo [LICENSE](file:///c:/Users/alors/Downloa
 ## ⚙️ Setup Instructions
 
 ### 1. Clone & Navigate to Folder
+
 ```bash
 git clone <your-repository-url>
 cd <repository-folder>
 ```
 
 ### 2. Install Dependencies
+
 Install all required Python packages using pip:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Configure `config.ini`
+
 Create/update `config.ini` in the root folder with your Discord Bot Token and API Credentials:
 
 ```ini
@@ -191,7 +202,9 @@ show_buyer_seller = True
 ```
 
 ### 4. Run the Bot
+
 Start the bot using Python:
+
 ```bash
 python main.py
 ```
@@ -214,13 +227,14 @@ python main.py
 
 This project is licensed under the **OBLIGATORY ATTRIBUTION FREE SOFTWARE LICENSE (ALBERTO ORTIZ LICENSE)**.
 
-### License Summary:
+### License Summary
+
 1. **Free Use**: Permitted for personal and non-commercial purposes.
 2. **Forks & Modifications**: Permitted on public development platforms (such as GitHub).
 3. **Obligatory Attribution**:
    - All copyright notices and the name of **Alberto Ortiz** must remain intact in the source code and bot replies.
    - Any modification or fork must explicitly declare at the beginning of its documentation and interface:
-     > *"This Software is a fork/modification based on the original 'TrustMM' project developed by Alberto Ortiz (https://github.com/alberto2005-coder)."*
+     > *"This Software is a fork/modification based on the original 'TrustMM' project developed by Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
 4. **Commercial Prohibition**: Commercial sale, distribution, or economic exploitation of this Software or its derivatives is strictly prohibited without prior written consent.
 
 For more details, see the [LICENSE](file:///c:/Users/alors/Downloads/Opp Auto MM/LICENSE) file.
