@@ -1,10 +1,10 @@
 import json
 import os
 import requests
-import asyncio
 import discord
 import chat_exporter 
 import configparser
+import re
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -44,16 +44,53 @@ def save_data(data):
         json.dump(data, f, indent=4)
 
 
-def get_ltc_to_usd_exchange_rate():
+def get_ltc_to_currency_exchange_rate(currency="USD"):
     url = "https://api.coinbase.com/v2/exchange-rates?currency=LTC"
     response = requests.get(url)
 
     if response.status_code == 200:
         data = response.json()
-        ltc_to_usd = float(data['data']['rates']['USD'])
-        return ltc_to_usd
+        rates = data['data']['rates']
+        currency = currency.upper().strip()
+        if currency in rates:
+            return float(rates[currency])
+        else:
+            raise ValueError(f"Currency {currency} is not supported by Coinbase.")
     else:
         raise Exception(f"Failed to get exchange rate. Status code: {response.status_code}, Response: {response.text}")
+
+def get_ltc_to_usd_exchange_rate():
+    return get_ltc_to_currency_exchange_rate("USD")
+
+def is_valid_ltc_address(address: str) -> bool:
+    address = address.strip()
+    # Legacy (L...) or P2SH (M...)
+    legacy_p2sh_pattern = r"^[LM][a-km-zA-HJ-NP-Z1-9]{26,34}$"
+    # Bech32 (ltc1...)
+    bech32_pattern = r"^ltc1[0-9a-z]{39,59}$"
+    
+    return bool(re.match(legacy_p2sh_pattern, address) or re.match(bech32_pattern, address))
+
+def parse_amount(amount_str: str) -> float:
+    if "-" in amount_str:
+        raise ValueError("Amount must be a positive number")
+        
+    cleaned = amount_str.strip()
+    
+    # Replace comma with period if it acts as a decimal separator
+    if "," in cleaned and "." not in cleaned:
+        cleaned = cleaned.replace(",", ".")
+    
+    # Remove all characters except digits and period
+    cleaned = re.sub(r"[^\d.]", "", cleaned)
+    
+    try:
+        val = float(cleaned)
+        if val <= 0:
+            raise ValueError("Amount must be greater than 0")
+        return val
+    except ValueError:
+        raise ValueError("Invalid amount format")
 
 def create_new_ltc_address():
     endpoint = "https://api.blockcypher.com/v1/ltc/main/addrs"
@@ -67,7 +104,7 @@ def create_new_ltc_address():
     else:
         raise Exception("Error generating new LTC address.")
 
-def store_deal_data(deal_id, ltc_address, private_key, ltc_amount, usd_amount):
+def store_deal_data(deal_id, ltc_address, private_key, ltc_amount, usd_amount, fiat_amount=None, currency="USD"):
     database_folder = "Database"
     data_file = os.path.join(database_folder, "Data.json")
 
@@ -84,6 +121,9 @@ def store_deal_data(deal_id, ltc_address, private_key, ltc_amount, usd_amount):
             data[deal_id]["private_key"] = private_key
             data[deal_id]["amount_in_ltc"] = ltc_amount
             data[deal_id]["deal_amount_usd"] = usd_amount
+            if fiat_amount is not None:
+                data[deal_id]["deal_amount_fiat"] = fiat_amount
+            data[deal_id]["currency"] = currency
 
     with open(data_file, 'w') as file:
         json.dump(data, file, indent=4)

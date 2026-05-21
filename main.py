@@ -203,7 +203,7 @@ class RoleSelectorView(discord.ui.View):
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         if not self.buyer or not self.seller:
-            await interaction.response.send_message("Both buyer and seller need to be selected before confirming.", ephemeral=True)
+            await interaction.followup.send("Both buyer and seller need to be selected before confirming.", ephemeral=True)
             return
 
         for child in self.children:
@@ -216,39 +216,12 @@ class RoleSelectorView(discord.ui.View):
         await interaction.followup.send("Roles confirmed!", ephemeral=True)
 
         embed = discord.Embed(
-            title="Amount of Deal",
-            description=f"{self.seller.mention}, please enter the amount of the deal in USD.",
+            title="Set Deal Details",
+            description=f"{self.seller.mention}, please click the button below to enter the deal amount and select the currency.",
             color=0xffff00
         )
-        await interaction.channel.send(embed=embed)
-
-        def check(m):
-            return m.author == self.seller and m.channel == interaction.channel
-
-        while True:
-            try:
-                message = await interaction.client.wait_for('message', check=check, timeout=120)
-                amount = float(message.content)
-                confirmation_embed = discord.Embed(
-                    title="Deal Amount Confirmation",
-                    description=f"- Amount : **${amount:.2f} USD**\n\n- Accept or Reject the deal.",
-                    color=embed_color
-                )
-                confirmation_embed.set_footer(text=footer_text, icon_url=icon_url)  
-                confirmation_embed.set_thumbnail(url=thumbnail_url)
-                view = DealConfirmationView(self.buyer, self.seller, amount)
-                await interaction.channel.send(f"{self.buyer.mention}", embed=confirmation_embed, view=view)
-
-                await view.wait()
-
-                if view.confirmed:
-                    break  
-
-            except ValueError:
-                await interaction.channel.send(f"{self.seller.mention}, please enter a valid number for the deal amount (e.g., 100.00).")
-            except asyncio.TimeoutError:
-                await interaction.channel.send(f"{self.seller.mention}, you took too long to respond. Please try again later.")
-                break
+        view = SetDealDetailsView(self.buyer, self.seller)
+        await interaction.channel.send(embed=embed, view=view)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -281,12 +254,86 @@ class RoleSelectorView(discord.ui.View):
         await interaction.response.send_message(f"Roles updated:\nBuyer: {buyer_mention}\nSeller: {seller_mention}", ephemeral=True)
 
 
-class DealConfirmationView(discord.ui.View):
-    def __init__(self, buyer, seller, amount):
+class SetDealDetailsView(discord.ui.View):
+    def __init__(self, buyer: discord.Member, seller: discord.Member):
         super().__init__(timeout=None)
         self.buyer = buyer
         self.seller = seller
-        self.amount = amount
+
+    @discord.ui.button(label="Set Deal Amount & Currency", style=discord.ButtonStyle.primary)
+    async def set_details_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.seller:
+            await interaction.response.send_message("Only the seller can set the deal details.", ephemeral=True)
+            return
+        
+        modal = SetDealDetailsModal(self.buyer, self.seller, self)
+        await interaction.response.send_modal(modal)
+
+
+class SetDealDetailsModal(discord.ui.Modal):
+    def __init__(self, buyer: discord.Member, seller: discord.Member, parent_view: discord.ui.View):
+        super().__init__(title="Enter Deal Details")
+        self.buyer = buyer
+        self.seller = seller
+        self.parent_view = parent_view
+        
+        self.amount_input = discord.ui.TextInput(
+            label="Deal Amount (e.g., 50.00)",
+            placeholder="Enter the transaction amount",
+            required=True
+        )
+        self.currency_input = discord.ui.TextInput(
+            label="Currency (e.g., USD, EUR, GBP)",
+            placeholder="USD",
+            default="USD",
+            required=False,
+            max_length=5
+        )
+        self.add_item(self.amount_input)
+        self.add_item(self.currency_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        
+        raw_amount = self.amount_input.value
+        raw_currency = self.currency_input.value or "USD"
+        
+        try:
+            amount = parse_amount(raw_amount)
+        except ValueError as e:
+            await interaction.followup.send(f"❌ Invalid amount: {str(e)}. Please click the button and try again.", ephemeral=True)
+            return
+            
+        currency = raw_currency.upper().strip()
+        try:
+            get_ltc_to_currency_exchange_rate(currency)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Currency '{currency}' is not supported or API error: {str(e)}. Please click the button and try again.", ephemeral=True)
+            return
+
+        for child in self.parent_view.children:
+            child.disabled = True
+        await interaction.message.edit(view=self.parent_view)
+
+        confirmation_embed = discord.Embed(
+            title="Deal Details Confirmation",
+            description=f"- Amount : **{amount:.2f} {currency}**\n\n- Accept or Reject the deal.",
+            color=embed_color
+        )
+        confirmation_embed.set_footer(text=footer_text, icon_url=icon_url)  
+        confirmation_embed.set_thumbnail(url=thumbnail_url)
+        
+        view = DealConfirmationView(self.buyer, self.seller, amount, currency)
+        await interaction.channel.send(f"{self.buyer.mention}", embed=confirmation_embed, view=view)
+
+
+class DealConfirmationView(discord.ui.View):
+    def __init__(self, buyer, seller, amount, currency="USD"):
+        super().__init__(timeout=None)
+        self.buyer = buyer
+        self.seller = seller
+        self.amount = amount  # This is the fiat amount
+        self.currency = currency
         self.dealid = None
         self.confirmed = False  
         self.ltc_wallet_address = None
@@ -305,15 +352,15 @@ class DealConfirmationView(discord.ui.View):
                 incoming = float(balance_data["incoming"])
                 incoming_pending = float(balance_data["incomingPending"])
 
-                ltc_to_usd = get_ltc_to_usd_exchange_rate()
+                ltc_to_currency = get_ltc_to_currency_exchange_rate(self.currency)
 
                 if incoming_pending > 0 and not self.pending_detected:
-                    pending_amount_usd = incoming_pending * ltc_to_usd
+                    pending_amount_fiat = incoming_pending * ltc_to_currency
                     pending_embed = discord.Embed(
                         title="Pending Payment Detected",
                         description=(
                             f"> A Pending Transaction Is Detected.\n\n"
-                            f"- ${pending_amount_usd:.2f} USD ({incoming_pending:.4f} LTC)"
+                            f"- {pending_amount_fiat:.2f} {self.currency} ({incoming_pending:.4f} LTC)"
                         ),
                         color=embed_color
                     )
@@ -325,17 +372,17 @@ class DealConfirmationView(discord.ui.View):
                     self.pending_sent = True
 
                 if self.pending_detected and incoming_pending == 0 and incoming > 0:
-                    confirmed_amount_usd = incoming * ltc_to_usd
+                    confirmed_amount_fiat = incoming * ltc_to_currency
                     confirmed_embed = discord.Embed(
                         title="Payment Received",
                         description=(
                             f"> The Pending Transaction Is Now Confirmed.\n\n"
-                            f"- **{confirmed_amount_usd:.2f} USD ({incoming:.4f} LTC)**\n\n"
+                            f"- **{confirmed_amount_fiat:.2f} {self.currency} ({incoming:.4f} LTC)**\n\n"
                         ),
                         color=0x00FF00
                     )
 
-                    view = PaymentActionView(buyer=self.buyer, seller=self.seller, amount=incoming)
+                    view = PaymentActionView(buyer=self.buyer, seller=self.seller, amount=incoming, currency=self.currency, original_fiat_amount=confirmed_amount_fiat)
 
                     confirmed_embed.set_footer(text=f"{footer_text} • Payment Confirmed", icon_url=icon_url)
                     confirmed_embed.set_thumbnail(url=tick_image)
@@ -351,9 +398,14 @@ class DealConfirmationView(discord.ui.View):
                     else:
                         data = {}
 
+                    ltc_to_usd = get_ltc_to_usd_exchange_rate()
+                    confirmed_amount_usd = incoming * ltc_to_usd
+
                     if self.dealid in data:
                             data[self.dealid]["received_amount_ltc"] = incoming
                             data[self.dealid]["received_amount_usd"] = confirmed_amount_usd
+                            data[self.dealid]["received_amount_fiat"] = confirmed_amount_fiat
+                            data[self.dealid]["received_currency"] = self.currency
 
                     with open(data_file, 'w') as file:
                         json.dump(data, file, indent=4)
@@ -377,8 +429,6 @@ class DealConfirmationView(discord.ui.View):
             
             await self.payment_channel.send(embed=timeout_embed)
 
-
-
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.buyer:
@@ -395,10 +445,13 @@ class DealConfirmationView(discord.ui.View):
         await interaction.message.edit(embed=confirmation_embed)
 
         ltc_wallet_address, private_key = create_new_ltc_address() 
-        ltc_to_usd = get_ltc_to_usd_exchange_rate()  
-        ltc_amount = self.amount / ltc_to_usd 
+        ltc_to_currency = get_ltc_to_currency_exchange_rate(self.currency)  
+        ltc_amount = self.amount / ltc_to_currency 
 
-        store_deal_data(interaction.channel.topic, ltc_wallet_address, private_key, ltc_amount, self.amount)
+        ltc_to_usd = get_ltc_to_usd_exchange_rate()
+        usd_amount = ltc_amount * ltc_to_usd
+
+        store_deal_data(interaction.channel.topic, ltc_wallet_address, private_key, ltc_amount, usd_amount, self.amount, self.currency)
         self.dealid = interaction.channel.topic
         payment_embed = discord.Embed(
             title="Waiting For Payment",
@@ -433,44 +486,14 @@ class DealConfirmationView(discord.ui.View):
         confirmation_embed.set_footer(text=f"Deal rejected by {self.buyer.display_name}")
         await interaction.message.edit(embed=confirmation_embed)
 
-
         embed = discord.Embed(
-            title="Amount of Deal",
-            description=f"{self.seller.mention}, please enter the amount of the deal in USD.",
+            title="Set Deal Details",
+            description=f"{self.seller.mention}, please click the button below to enter the deal amount and select the currency.",
             color=0xffff00
         )
-
-        await interaction.channel.send(f"{self.seller.mention}", embed=embed)
-
+        view = SetDealDetailsView(self.buyer, self.seller)
+        await interaction.channel.send(embed=embed, view=view)
         self.confirmed = False
-
-        def check(m):
-            return m.author == self.seller and m.channel == interaction.channel
-
-        while True:
-            try:
-                message = await interaction.client.wait_for('message', check=check, timeout=120)
-                amount = float(message.content)
-                confirmation_embed = discord.Embed(
-                    title="Deal Amount Confirmation",
-                    description=f"- Amount : **${amount:.2f} USD**\n\n- Accept or Reject the deal.",
-                    color=embed_color
-                )
-                confirmation_embed.set_footer(text=footer_text, icon_url=icon_url)  
-                confirmation_embed.set_thumbnail(url=thumbnail_url)
-                view = DealConfirmationView(self.buyer, self.seller, amount)
-                await interaction.channel.send(f"{self.buyer.mention}",embed=confirmation_embed, view=view)
-
-                await view.wait()
-
-                if view.confirmed:
-                    break  
-        
-            except ValueError:
-                await interaction.channel.send(f"{self.seller.mention}, please enter a valid number for the deal amount (e.g., 100.00).")
-            except asyncio.TimeoutError:
-                await interaction.channel.send(f"{self.seller.mention}, you took too long to respond. Please try again later.")
-                break
 
 
 class PaymentEmbedView(discord.ui.View):
@@ -494,7 +517,7 @@ class PaymentEmbedView(discord.ui.View):
         qr_image = qrcode.make(qr_data)
 
         buffer = io.BytesIO()
-        qr_image.save(buffer, format='PNG')
+        qr_image.save(buffer)
         buffer.seek(0)
 
         qr_embed = discord.Embed(
@@ -509,17 +532,14 @@ class PaymentEmbedView(discord.ui.View):
         await interaction.message.edit(view=self)
 
 
-
-
-
-
-
 class PaymentActionView(discord.ui.View):
-    def __init__(self, buyer, seller, amount):
+    def __init__(self, buyer, seller, amount, currency="USD", original_fiat_amount=None):
         super().__init__(timeout=None)
         self.buyer = buyer
         self.seller = seller
-        self.amount = amount
+        self.amount = amount  # This is the LTC amount
+        self.currency = currency
+        self.original_fiat_amount = original_fiat_amount
 
     @discord.ui.button(label="Release", style=discord.ButtonStyle.green)
     async def release_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -534,12 +554,13 @@ class PaymentActionView(discord.ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        confirm_view = ConfirmReleaseView(self.buyer,self.seller, self.amount)
+        confirm_view = ConfirmReleaseView(self.buyer, self.seller, self.amount, self.currency, self.original_fiat_amount)
+        fiat_desc = f"`{self.original_fiat_amount:.2f} {self.currency}`" if self.original_fiat_amount else f"`{self.amount} LTC`"
         embed = discord.Embed(
             title="Release Payment Confirmation",
             description=(
                 "> **Are you sure you want to release the payment?**\n\n"
-                f"**Amount:** `{self.amount} USD`\n"
+                f"**Amount:** {fiat_desc} ({self.amount:.4f} LTC)\n"
                 "- Click the button below to confirm your action."
             ),
             color=0xFFFFFF
@@ -550,12 +571,14 @@ class PaymentActionView(discord.ui.View):
 
     @discord.ui.button(label="Refund", style=discord.ButtonStyle.red)
     async def refund_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        fiat_desc = f"`{self.original_fiat_amount:.2f} {self.currency}`" if self.original_fiat_amount else f"`{self.amount} LTC`"
         if interaction.user == self.buyer:
-            confirm_view = ConfirmRefundView(self.seller, self.buyer, self.amount, refund_initiator=self.buyer)
+            confirm_view = ConfirmRefundView(self.seller, self.buyer, self.amount, self.currency, self.original_fiat_amount, refund_initiator=self.buyer)
             embed = discord.Embed(
                 title="Refund Requested by Buyer",
                 description=(
                     f"> **Refund request initiated by** {self.buyer.mention}.\n\n"
+                    f"**Amount:** {fiat_desc} ({self.amount:.4f} LTC)\n"
                     f"**Waiting for** {self.seller.mention} **to confirm the refund.**"
                 ),
                 color=0xFFFFFF
@@ -565,11 +588,12 @@ class PaymentActionView(discord.ui.View):
             await interaction.response.send_message(embed=embed, view=confirm_view)
 
         elif interaction.user == self.seller:
-            confirm_view = ConfirmRefundView(self.seller, self.buyer, self.amount, refund_initiator=self.seller)
+            confirm_view = ConfirmRefundView(self.seller, self.buyer, self.amount, self.currency, self.original_fiat_amount, refund_initiator=self.seller)
             embed = discord.Embed(
                 title="Refund Requested by Seller",
                 description=(
                     f"> **Refund request initiated by** {self.seller.mention}.\n\n"
+                    f"**Amount:** {fiat_desc} ({self.amount:.4f} LTC)\n"
                     f"**Waiting for** {self.buyer.mention} **to confirm the refund.**"
                 ),
                 color=0xFFFFFF
@@ -578,12 +602,15 @@ class PaymentActionView(discord.ui.View):
             embed.set_thumbnail(url=thumbnail_url)
             await interaction.response.send_message(embed=embed, view=confirm_view)
 
+
 class ConfirmReleaseView(discord.ui.View):
-    def __init__(self, buyer, seller, amount):
+    def __init__(self, buyer, seller, amount_ltc, currency="USD", original_fiat_amount=None):
         super().__init__(timeout=None)
         self.buyer = buyer
         self.seller = seller
-        self.amount = amount
+        self.amount_ltc = amount_ltc
+        self.currency = currency
+        self.original_fiat_amount = original_fiat_amount
 
     @discord.ui.button(label="Confirm Release", style=discord.ButtonStyle.green)
     async def confirm_release(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -598,79 +625,57 @@ class ConfirmReleaseView(discord.ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
+        for child in self.children:
+            child.disabled = True
+        await interaction.message.edit(view=self)
+
+        fiat_desc = f"{self.original_fiat_amount:.2f} {self.currency}" if self.original_fiat_amount else f"{self.amount_ltc} LTC"
         embed = discord.Embed(
             title="Payment Released",
-            description=(f"- 💸 **Payment Is Now Released :** `{self.amount} USD`\n\n- Please Provide Your Ltc Address."),
+            description=(
+                f"- 💸 **Payment Is Now Released:** `{fiat_desc}`\n\n"
+                f"- {self.seller.mention}, please click the button below to provide your LTC address."
+            ),
             color=embed_color
         )
         embed.set_footer(text=footer_text, icon_url=icon_url)
         embed.set_thumbnail(url=thumbnail_url)
         
+        view = EnterLtcAddressView(recipient=self.seller, amount_ltc=self.amount_ltc)
+        await interaction.channel.send(f"{self.seller.mention}", embed=embed, view=view)
 
-        for child in self.children:
-            child.disabled = True
-        await interaction.message.edit(view=self)
-
-        await interaction.channel.send(f"{self.seller.mention}", embed=embed)
-
-        def check(m):
-            return m.author == self.seller and m.channel == interaction.channel
-
-        try:
-            msg = await interaction.client.wait_for('message', check=check, timeout=None)
-            ltc_address = msg.content
-            await interaction.channel.send(f"**> LTC ADDRESS :** `{ltc_address}`.")
-
-            deal_id = interaction.channel.topic if interaction.channel.topic else "Unknown Deal ID"
-
-            await send_ltc(ltc_address, self.amount, interaction, deal_id)
-
-
-        except asyncio.TimeoutError:
-            await interaction.channel.send(f"{self.seller.mention}, you did not provide an LTC address in time. Please try again.")
 
 class ConfirmRefundView(discord.ui.View):
-    def __init__(self, seller, buyer, amount, refund_initiator):
+    def __init__(self, seller, buyer, amount_ltc, currency="USD", original_fiat_amount=None, refund_initiator=None):
         super().__init__(timeout=None)
         self.seller = seller
         self.buyer = buyer
-        self.amount = amount
+        self.amount_ltc = amount_ltc
+        self.currency = currency
+        self.original_fiat_amount = original_fiat_amount
         self.refund_initiator = refund_initiator
 
     @discord.ui.button(label="Confirm Refund", style=discord.ButtonStyle.red)
     async def confirm_refund(self, interaction: discord.Interaction, button: discord.ui.Button):
         if (interaction.user == self.seller and self.refund_initiator == self.buyer) or (interaction.user == self.buyer and self.refund_initiator == self.seller):
+            for child in self.children:
+                child.disabled = True
+            await interaction.message.edit(view=self)
+
+            fiat_desc = f"{self.original_fiat_amount:.2f} {self.currency}" if self.original_fiat_amount else f"{self.amount_ltc} LTC"
             embed = discord.Embed(
                 title="Refund Confirmed",
-                description=(f"- 💸 **Payment Is Now Released :** `{self.amount} USD`\n\n- Please Provide Your Ltc Address."),
+                description=(
+                    f"- 💸 **Refund Is Now Confirmed:** `{fiat_desc}`\n\n"
+                    f"- {self.buyer.mention}, please click the button below to provide your LTC address."
+                ),
                 color=embed_color
             )
             embed.set_footer(text=footer_text, icon_url=icon_url)
             embed.set_thumbnail(url=thumbnail_url)
             
-
-            for child in self.children:
-                child.disabled = True
-            await interaction.message.edit(view=self)
-
-            await interaction.channel.send(f"{self.buyer.mention}", embed=embed)
-
-            def check(m):
-                return m.author == self.buyer and m.channel == interaction.channel
-
-            try:
-                msg = await interaction.client.wait_for('message', check=check, timeout=None)
-                ltc_address = msg.content
-                await interaction.channel.send(f"**> LTC ADDRESS :** `{ltc_address}`.")
-
-                deal_id = interaction.channel.topic if interaction.channel.topic else "Unknown Deal ID"
-
-                await send_ltc(ltc_address, self.amount, interaction, deal_id)
-
-                
-
-            except asyncio.TimeoutError:
-                await interaction.channel.send(f"{self.buyer.mention}, you did not provide an LTC address in time. Please try again.")
+            view = EnterLtcAddressView(recipient=self.buyer, amount_ltc=self.amount_ltc)
+            await interaction.channel.send(f"{self.buyer.mention}", embed=embed, view=view)
         else:
             embed = discord.Embed(
                 title="Unauthorized Action",
@@ -680,6 +685,56 @@ class ConfirmRefundView(discord.ui.View):
             embed.set_footer(text=footer_text, icon_url=icon_url)
             embed.set_thumbnail(url=thumbnail_url)
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+class EnterLtcAddressView(discord.ui.View):
+    def __init__(self, recipient: discord.Member, amount_ltc: float):
+        super().__init__(timeout=None)
+        self.recipient = recipient
+        self.amount_ltc = amount_ltc
+
+    @discord.ui.button(label="Enter LTC Address", style=discord.ButtonStyle.green)
+    async def enter_address_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.recipient:
+            await interaction.response.send_message(f"Only {self.recipient.display_name} can enter the wallet address.", ephemeral=True)
+            return
+        
+        modal = LtcAddressModal(self.recipient, self.amount_ltc, self)
+        await interaction.response.send_modal(modal)
+
+
+class LtcAddressModal(discord.ui.Modal):
+    def __init__(self, recipient: discord.Member, amount_ltc: float, parent_view: discord.ui.View):
+        super().__init__(title="Enter Wallet Address")
+        self.recipient = recipient
+        self.amount_ltc = amount_ltc
+        self.parent_view = parent_view
+        
+        self.address_input = discord.ui.TextInput(
+            label="LTC Wallet Address",
+            placeholder="L... or M... or ltc1...",
+            required=True
+        )
+        self.add_item(self.address_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        
+        address = self.address_input.value.strip()
+        
+        if not is_valid_ltc_address(address):
+            await interaction.followup.send("❌ Invalid Litecoin (LTC) address format. Please check the address and try again.", ephemeral=True)
+            return
+
+        for child in self.parent_view.children:
+            child.disabled = True
+        await interaction.message.edit(view=self.parent_view)
+
+        await interaction.channel.send(f"**> LTC ADDRESS :** `{address}`.")
+
+        deal_id = interaction.channel.topic if interaction.channel.topic else "Unknown Deal ID"
+
+        await send_ltc(address, self.amount_ltc, interaction, deal_id)
 
 
 
