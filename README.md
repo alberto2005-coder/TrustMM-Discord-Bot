@@ -118,7 +118,7 @@ Este proyecto está bajo la **LICENCIA DE SOFTWARE LIBRE CON ATRIBUCIÓN OBLIGAT
      > *"Este Software es una bifurcación/modificación basada en el proyecto original 'TrustMM' desarrollado por Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
 4. **Prohibición Comercial**: Queda estrictamente prohibida la explotación comercial o venta de este Software o sus derivados sin consentimiento previo por escrito.
 
-Para más detalles, consulta el archivo [LICENSE](file:///c:/Users/alors/Downloads/Opp Auto MM/LICENSE).
+Para más detalles, consulta el archivo [LICENSE](LICENSE).
 
 ---
 ---
@@ -237,4 +237,4 @@ This project is licensed under the **OBLIGATORY ATTRIBUTION FREE SOFTWARE LICENS
      > *"This Software is a fork/modification based on the original 'TrustMM' project developed by Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
 4. **Commercial Prohibition**: Commercial sale, distribution, or economic exploitation of this Software or its derivatives is strictly prohibited without prior written consent.
 
-For more details, see the [LICENSE](file:///c:/Users/alors/Downloads/Opp Auto MM/LICENSE) file.
+For more details, see the [LICENSE](LICENSE) file.
