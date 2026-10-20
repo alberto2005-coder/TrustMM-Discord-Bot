@@ -106,17 +106,14 @@ python main.py
 
 ## 📜 Licencia
 
-Este proyecto está bajo la **LICENCIA DE SOFTWARE LIBRE CON ATRIBUCIÓN OBLIGATORIA (LICENCIA ALBERTO ORTIZ)**.
+Este proyecto está bajo la **Licencia GPL-3.0**.
 
 ### Resumen de la Licencia
 
-1. **Uso Gratuito**: Permitido para fines personales y no comerciales.
-2. **Bifurcaciones (Forks) y Modificaciones**: Permitidos en plataformas públicas (como GitHub).
-3. **Atribución Obligatoria**:
-   - Se deben conservar todos los avisos de copyright y el nombre de **Alberto Ortiz** en el código fuente y las respuestas del bot.
-   - Cualquier modificación o bifurcación debe declarar explícitamente al inicio de su documentación y en la interfaz:
-     > *"Este Software es una bifurcación/modificación basada en el proyecto original 'TrustMM' desarrollado por Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
-4. **Prohibición Comercial**: Queda estrictamente prohibida la explotación comercial o venta de este Software o sus derivados sin consentimiento previo por escrito.
+1. **Uso libre**: Personal, educativo y también comercial.
+2. **Bifurcaciones (Forks) y modificaciones**: Permitidas en plataformas públicas (como GitHub).
+3. **Copyleft**: Si distribuyes copias o versiones modificadas, debes publicar su código fuente bajo la misma licencia (GPL-3.0).
+4. **Atribución**: Conserva los avisos de copyright y el nombre de **Alberto Ortiz** en el código fuente.
 
 Para más detalles, consulta el archivo [LICENSE](LICENSE).
 
@@ -225,16 +222,13 @@ python main.py
 
 ## 📜 License
 
-This project is licensed under the **OBLIGATORY ATTRIBUTION FREE SOFTWARE LICENSE (ALBERTO ORTIZ LICENSE)**.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 ### License Summary
 
-1. **Free Use**: Permitted for personal and non-commercial purposes.
+1. **Free use**: Personal, educational and also commercial.
 2. **Forks & Modifications**: Permitted on public development platforms (such as GitHub).
-3. **Obligatory Attribution**:
-   - All copyright notices and the name of **Alberto Ortiz** must remain intact in the source code and bot replies.
-   - Any modification or fork must explicitly declare at the beginning of its documentation and interface:
-     > *"This Software is a fork/modification based on the original 'TrustMM' project developed by Alberto Ortiz ([https://github.com/alberto2005-coder](https://github.com/alberto2005-coder))."*
-4. **Commercial Prohibition**: Commercial sale, distribution, or economic exploitation of this Software or its derivatives is strictly prohibited without prior written consent.
+3. **Copyleft**: If you distribute copies or modified versions, you must publish their source code under the same license (GPL-3.0).
+4. **Attribution**: Keep the copyright notices and the name of **Alberto Ortiz** in the source code.
 
 For more details, see the [LICENSE](LICENSE) file.
