@@ -1,190 +1,234 @@
-# 🚀 TrustMM - Bot de Discord de Escrow / Intermediario Automático de Litecoin (LTC)
+# TrustMM — escrow automático de Litecoin en Discord
 
-> **IDIOMA / LANGUAGE**: [Español (ES)](#español) | [English (EN)](#english)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![discord.py](https://img.shields.io/badge/discord.py-2.x-5865F2?logo=discord&logoColor=white)](https://discordpy.readthedocs.io/)
+[![Litecoin](https://img.shields.io/badge/Litecoin-LTC-A6A9AA?logo=litecoin&logoColor=white)](https://litecoin.org/)
+[![GPL-3.0](https://img.shields.io/badge/Licencia-GPL--3.0-blue)](LICENSE)
+
+[Español](#español) · [English](#english)
 
 ---
 
 ## Español
 
-**TrustMM** es un bot de Discord seguro y totalmente automatizado para actuar como intermediario o **Escrow / Middleman** en transacciones peer-to-peer (P2P) de **Litecoin (LTC)**. Elimina la necesidad de intermediarios manuales en las transacciones de criptomonedas mediante el uso de monederos temporales ("hot-wallets") y el monitoreo de transacciones entrantes directamente en la blockchain en tiempo real.
+### Índice
 
----
+- [Descripción](#descripción)
+- [Cómo funciona un trato](#cómo-funciona-un-trato)
+- [Características](#características)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Comandos](#comandos)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Seguridad y responsabilidad](#seguridad-y-responsabilidad)
+- [Licencia](#licencia)
 
-## 📋 Características
+### Descripción
 
-- **Creación Automatizada de Tickets**: Creación instantánea de canales de texto privados dedicados exclusivamente a cada transacción entre Comprador y Vendedor.
-- **Selección de Roles Dinámica**: Interfaz intuitiva con botones interactivos para definir quién actúa como Comprador y quién como Vendedor.
-- **Modales Interactivos Seguros**: Transición de entradas por mensajes de texto (`wait_for`) a modales emergentes interactivos integrados en Discord para configurar detalles del trato y capturar direcciones de monedero de manera limpia y sin interferencias en el chat.
-- **Soporte de Divisas Personalizables**: Permite al vendedor seleccionar su divisa fiat preferida (como USD, EUR, GBP, ARS, etc.) al configurar la transacción, obteniendo la tasa de conversión a LTC en tiempo real mediante la API de Coinbase.
-- **Validación Avanzada de Direcciones LTC**: Validación automatizada mediante expresiones regulares (Regex) de direcciones Litecoin en mainnet (formatos Legacy `L...`, P2SH `M...` y Bech32 `ltc1...`) para evitar transacciones a direcciones inválidas o incorrectas.
-- **Sanitización Robusta de Montos**: Capacidad de procesar y limpiar cantidades monetarias ingresadas por el usuario eliminando automáticamente espacios, símbolos de moneda ($, €, £, etc.) y estandarizando separadores decimales.
-- **Monitoreo Automático de la Blockchain**: Consulta periódica a través de la API de Tatum para detectar transacciones pendientes y confirmadas en la blockchain de Litecoin de forma automatizada.
-- **Gestión Segura de Fondos**: Permite liberar los fondos al vendedor (deduciendo comisiones de red estándar) o reembolsarlos al comprador mediante mutuo acuerdo.
-- **Transcripciones HTML del Chat**: Generación automática de auditorías en HTML utilizando `chat-exporter` que son enviadas a los mensajes directos (DMs) de ambas partes al completarse o cancelarse la transacción.
-- **Comandos Administrativos**: Panel de control y comandos Slash para administradores para gestionar perfiles, forzar liberaciones manuales de LTC y revisar estadísticas generales del servidor.
+**TrustMM** es un bot de Discord que actúa como **intermediario (escrow / middleman)** en transacciones P2P de **Litecoin (LTC)**. El bot abre un canal privado por operación, genera una dirección de depósito temporal, vigila la blockchain y libera o devuelve los fondos cuando ambas partes confirman el trato. Con ello sustituye al intermediario humano por un flujo automatizado y auditable.
 
----
+### Cómo funciona un trato
 
-## 🔧 Requisitos Previos
+1. Un administrador publica el panel con `/automm-panel`.
+2. Comprador y vendedor abren un ticket y eligen su rol con botones.
+3. Cada uno completa un **modal** con los datos del trato y su dirección de cobro.
+4. El vendedor fija el precio en su divisa; el bot consulta la tasa LTC/fiat en **Coinbase**.
+5. El bot crea una **dirección LTC temporal** (Tatum) y muestra el importe y un QR de depósito.
+6. El comprador envía los LTC; el bot consulta el saldo de la dirección periódicamente.
+7. Con el depósito confirmado, el bot libera los fondos al vendedor (descontando la comisión de red) o los reembolsa al comprador si ambas partes acuerdan cancelar.
+8. Al cerrar, genera una **transcripción HTML** y la envía por MD a las dos partes.
 
-- **Python 3.8 o superior**
-- **Token de Bot de Discord** (con todos los Gateway Intents habilitados en el Discord Developer Portal).
-- **API Key de Tatum** (para verificación de balances y envío/emisión de transacciones en la red Litecoin).
+### Características
 
----
+- **Tickets automáticos**: canal de texto privado por transacción.
+- **Selección de rol** con botones (comprador / vendedor).
+- **Modales de Discord** en lugar de esperar mensajes de texto.
+- **Divisas fiat configurables** (USD, EUR, GBP, ARS…) con tasa en tiempo real.
+- **Validación de direcciones LTC** mainnet: Legacy (`L...`), P2SH (`M...`) y Bech32 (`ltc1...`).
+- **Saneamiento de importes**: quita símbolos de moneda y normaliza separadores decimales.
+- **Seguimiento de la blockchain** vía API de Tatum, con depósitos pendientes y confirmados.
+- **Liberación y reembolso** con deducción de la comisión de red.
+- **Transcripciones HTML** enviadas por MD al completar o cancelar.
+- **Comandos de administración** para perfiles, liberaciones manuales y estadísticas.
 
-## ⚙️ Instrucciones de Configuración
+### Requisitos
 
-### 1. Clonar el Repositorio y Navegar a la Carpeta
+- **Python 3.8** o superior.
+- **Token de bot** de Discord con los *Gateway Intents* necesarios activados en el Developer Portal.
+- **Clave de API de Tatum** para consultar saldos y emitir transacciones en Litecoin.
+- Una categoría de Discord y un canal de logs.
+
+### Instalación
 
 ```bash
-git clone <url-de-tu-repositorio>
-cd <carpeta-del-repositorio>
-```
+git clone https://github.com/alberto2005-coder/TrustMM-Discord-Bot.git
+cd TrustMM-Discord-Bot
 
-### 2. Instalar las Dependencias
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
 
-Instala las librerías de Python requeridas ejecutando:
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar el archivo `config.ini`
+Dependencias: `discord.py`, `qrcode`, `psutil`, `chat-exporter` y `configparser`.
 
-Crea o edita el archivo `config.ini` en la raíz del proyecto con tus credenciales y configuraciones:
+### Configuración
+
+Copia `config.ini.example` a `config.ini` y rellena cada sección:
 
 ```ini
-[EmbedSettings]
-embed_color = 0xFFFFFF
-footer_text = TrustMM | Secure P2P Escrow Bot
-icon_url = 
-thumbnail_url = 
-loading_url = https://www.icegif.com/wp-content/uploads/2023/07/icegif-1263.gif
-ltc_image = https://w7.pngwing.com/pngs/786/58/png-transparent-coin-crypto-lite-litecion-ltc-crypto-currency-and-coin-icon.png
-tick_image = https://e7.pngegg.com/pngimages/270/706/png-clipart-check-mark-computer-icons-green-tick-mark-angle-text-thumbnail.png
-
 [Token]
-TOKEN = TU_DISCORD_BOT_TOKEN_AQUÍ
+TOKEN = TU_DISCORD_BOT_TOKEN
 
 [APIKeys]
-TATUM_APIKEY = TU_TATUM_API_KEY_AQUÍ
+TATUM_APIKEY = TU_TATUM_API_KEY
 
 [ChannelSettings]
-mm_log_channel_id = TU_ID_DE_CANAL_DE_LOGS
-category_id = TU_ID_DE_CATEGORÍA_DE_DISCORD
+mm_log_channel_id = ID_DEL_CANAL_DE_LOGS
+category_id = ID_DE_LA_CATEGORIA
 
 [RoleSettings]
-admin_role_id = TU_ID_DE_ROL_DE_ADMINISTRADOR
-client_role_id = TU_ID_DE_ROL_DE_CLIENTE
-
-[DisplaySettings]
-show_buyer_seller = True
+admin_role_id = ID_DEL_ROL_ADMIN
+client_role_id = ID_DEL_ROL_CLIENTE
 ```
 
-### 4. Iniciar el Bot
+`[EmbedSettings]` controla colores, textos e imágenes de los embeds; `[DisplaySettings]` decide si se muestran los roles de comprador y vendedor.
 
-Ejecuta el bot usando Python en tu terminal:
+Después:
+
+1. Activa los intents en el portal (incluido **Message Content** si tu versión de discord.py lo requiere).
+2. Invita el bot con los scopes `bot` y `applications.commands`.
+3. Arranca:
 
 ```bash
 python main.py
 ```
 
----
+4. Publica el panel con `/automm-panel` en el canal de admisión.
 
-## 🛠️ Comandos Slash (`/`)
+> [!IMPORTANT]
+> `config.ini` contiene el token del bot y la clave de Tatum. No lo subas al repositorio; si se filtra, cualquiera puede mover fondos o controlar el bot. Rota ambas credenciales de inmediato.
 
-- **/automm-panel**: Envía el panel embed interactivo de creación de transacciones (Solo Administradores).
-- **/transcript**: Genera y envía en el chat una transcripción completa interactiva en HTML del canal actual.
-- **/release**: Libera manualmente fondos en LTC de un Deal ID específico a una dirección externa (Solo Administradores).
-- **/delete**: Elimina el canal de transacción actual de forma segura después de 5 segundos (Solo Administradores).
-- **/profile**: Muestra el perfil y volumen de transacciones de un miembro (Volumen de USD comprado y vendido).
-- **/statistics**: Muestra la cantidad total de transacciones completadas y el volumen total en USD en el servidor.
-- **/about**: Muestra especificaciones técnicas del bot, tiempo en línea (uptime), uso de CPU/RAM e información de autoría.
+### Comandos
 
----
+| Comando | Quién | Qué hace |
+|---|---|---|
+| `/automm-panel` | Admin | Publica el panel de creación de tratos |
+| `/transcript` | Todos | Genera y envía una transcripción HTML del canal actual |
+| `/release` | Admin | Libera manualmente LTC de un *deal ID* a una dirección |
+| `/delete` | Admin | Borra el canal de la transacción tras 5 segundos |
+| `/profile` | Todos | Perfil y volumen (USD comprado/vendido) de un miembro |
+| `/statistics` | Todos | Tratos completados y volumen total en USD del servidor |
+| `/about` | Todos | Especificaciones, uptime y uso de CPU/RAM |
 
-## 📜 Licencia
+### Estructura del proyecto
 
-Este proyecto está bajo la **Licencia GPL-3.0**.
+```text
+TrustMM-Discord-Bot/
+├── main.py             # Bot, panel, modales, comandos y flujo del trato
+├── utils.py            # Tatum, Coinbase, validación LTC y persistencia JSON
+├── requirements.txt
+├── config.ini.example  # Plantilla de configuración
+├── .gitignore
+├── LICENSE
+└── README.md
+```
 
-### Resumen de la Licencia
+### Seguridad y responsabilidad
 
-1. **Uso libre**: Personal, educativo y también comercial.
-2. **Bifurcaciones (Forks) y modificaciones**: Permitidas en plataformas públicas (como GitHub).
-3. **Copyleft**: Si distribuyes copias o versiones modificadas, debes publicar su código fuente bajo la misma licencia (GPL-3.0).
-4. **Atribución**: Conserva los avisos de copyright y el nombre de **Alberto Ortiz** en el código fuente.
+- **Custodia de fondos**: durante un trato, los LTC están en una dirección controlada por el bot. Un fallo del código, del servidor o de las claves puede provocar **pérdida total**. Prueba primero con cantidades mínimas o en una red de prueba.
+- **Claves y token**: guarda `config.ini` fuera del repositorio y con permisos restringidos. La clave de Tatum permite emitir transacciones.
+- **Direcciones**: valida siempre la dirección de cobro con el vendedor por un canal aparte; el bot comprueba el formato, no la identidad de su dueño.
+- **Legalidad**: operar como intermediario puede tener implicaciones fiscales, de blanqueo de capitales o de licencias en tu país. Consulta la normativa aplicable antes de usarlo con dinero real.
+- **Sin garantías**: el proyecto se ofrece tal cual, sin soporte ni responsabilidad del autor por pérdidas derivadas de su uso.
 
-Para más detalles, consulta el archivo [LICENSE](LICENSE).
+### Licencia
 
----
+**GNU General Public License v3.0 (GPL-3.0)** — consulta [LICENSE](LICENSE). Las copias o versiones modificadas deben distribuirse bajo la misma licencia y conservar la atribución a **Alberto Ortiz**.
+
 ---
 
 ## English
 
-**TrustMM** is a secure, fully automated peer-to-peer (P2P) **Litecoin (LTC) Escrow / Middleman** Discord bot. It eliminates the need for manual intermediaries in cryptocurrency transactions by using temporary hot-wallets and monitoring incoming transactions directly on the blockchain in real-time.
+### Table of contents
 
----
+- [Overview](#overview)
+- [How a deal works](#how-a-deal-works)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Commands](#commands)
+- [Project structure](#project-structure)
+- [Security and responsibility](#security-and-responsibility)
+- [License](#license)
 
-## 📋 Features
+### Overview
 
-- **Automated Ticket/Channel Creation**: Secure, dedicated channels created instantly for Comprador/Vendedor (Buyer/Seller) deals.
-- **Dynamic Role Selection**: Simple interface buttons for identifying each participant's role (Buyer vs. Seller).
-- **Secure Interactive Modals**: Replaces chat-based text listeners (`wait_for` loops) with clean Discord pop-up modals for setting deal parameters and collecting payout wallet addresses.
-- **Custom Fiat Currency Support**: Allows the user to specify their preferred fiat currency (e.g., USD, EUR, GBP, ARS) at transaction setup, querying the Coinbase API for real-time LTC conversion rates.
-- **Advanced LTC Address Validation**: Automated Regex validation for mainnet Litecoin addresses supporting Legacy (`L...`), P2SH (`M...`), and Bech32 (`ltc1...`) formats to prevent transfer mistakes.
-- **Robust Amount Sanitization**: Strips currency symbols ($, €, £, etc.), spaces, and formats decimal separators automatically from user input to ensure robust and error-free amount parsing.
-- **Automatic Blockchain Monitoring**: Periodically tracks temporary wallets via Tatum API to detect pending and confirmed deposits.
-- **Secure Funds Management**: Funds can be released to the seller (deducting network fees) or refunded back to the buyer through mutual agreement.
-- **HTML Chat Transcripts**: Uses `chat-exporter` to auto-generate beautiful HTML audit logs of completed/cancelled transactions and DMs them to both parties.
-- **Admin Control Commands**: Complete control panel for administrators to manage profiles, generate reports, force manual releases, and view server deal statistics.
+**TrustMM** is a Discord bot that acts as an **escrow / middleman** for peer-to-peer **Litecoin (LTC)** deals. It opens a private channel per trade, generates a temporary deposit address, watches the blockchain and releases or refunds the funds once both parties confirm. It replaces the human middleman with an automated, auditable flow.
 
----
+### How a deal works
 
-## 🔧 Prerequisites
+1. An admin publishes the panel with `/automm-panel`.
+2. Buyer and seller open a ticket and pick their role with buttons.
+3. Each fills in a **modal** with the deal details and their payout address.
+4. The seller sets the price in their fiat currency; the bot fetches the LTC/fiat rate from **Coinbase**.
+5. The bot creates a **temporary LTC address** (Tatum) and shows the amount plus a deposit QR code.
+6. The buyer sends the LTC; the bot polls the address balance.
+7. Once the deposit is confirmed, the bot releases the funds to the seller (minus the network fee) or refunds the buyer if both parties agree to cancel.
+8. On closing, it generates an **HTML transcript** and DMs it to both parties.
 
-- **Python 3.8+**
-- **Discord Bot Token** (with all gateway intents enabled on the Discord Developer Portal)
-- **Tatum API Key** (for balance checks and transaction broadcasting)
+### Features
 
----
+- **Automatic tickets**: one private text channel per transaction.
+- **Role selection** via buttons (buyer / seller).
+- **Discord modals** instead of waiting for text messages.
+- **Configurable fiat currencies** (USD, EUR, GBP, ARS…) with live rates.
+- **LTC address validation** on mainnet: Legacy (`L...`), P2SH (`M...`) and Bech32 (`ltc1...`).
+- **Amount sanitisation**: strips currency symbols and normalises decimal separators.
+- **Blockchain tracking** through the Tatum API, covering pending and confirmed deposits.
+- **Release and refund** with the network fee deducted.
+- **HTML transcripts** DM'd on completion or cancellation.
+- **Admin commands** for profiles, manual releases and statistics.
 
-## ⚙️ Setup Instructions
+### Requirements
 
-### 1. Clone & Navigate to Folder
+- **Python 3.8** or later.
+- A **Discord bot token** with the required *Gateway Intents* enabled in the Developer Portal.
+- A **Tatum API key** to check balances and broadcast Litecoin transactions.
+- One Discord category and one log channel.
+
+### Installation
 
 ```bash
-git clone <your-repository-url>
-cd <repository-folder>
-```
+git clone https://github.com/alberto2005-coder/TrustMM-Discord-Bot.git
+cd TrustMM-Discord-Bot
 
-### 2. Install Dependencies
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
 
-Install all required Python packages using pip:
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure `config.ini`
+Dependencies: `discord.py`, `qrcode`, `psutil`, `chat-exporter` and `configparser`.
 
-Create/update `config.ini` in the root folder with your Discord Bot Token and API Credentials:
+### Configuration
+
+Copy `config.ini.example` to `config.ini` and fill in each section:
 
 ```ini
-[EmbedSettings]
-embed_color = 0xFFFFFF
-footer_text = TrustMM | Secure P2P Escrow Bot
-icon_url = 
-thumbnail_url = 
-loading_url = https://www.icegif.com/wp-content/uploads/2023/07/icegif-1263.gif
-ltc_image = https://w7.pngwing.com/pngs/786/58/png-transparent-coin-crypto-lite-litecion-ltc-crypto-currency-and-coin-icon.png
-tick_image = https://e7.pngegg.com/pngimages/270/706/png-clipart-check-mark-computer-icons-green-tick-mark-angle-text-thumbnail.png
-
 [Token]
-TOKEN = YOUR_DISCORD_BOT_TOKEN_HERE
+TOKEN = YOUR_DISCORD_BOT_TOKEN
 
 [APIKeys]
-TATUM_APIKEY = YOUR_TATUM_API_KEY_HERE
+TATUM_APIKEY = YOUR_TATUM_API_KEY
 
 [ChannelSettings]
 mm_log_channel_id = YOUR_LOG_CHANNEL_ID
@@ -193,42 +237,58 @@ category_id = YOUR_CATEGORY_ID
 [RoleSettings]
 admin_role_id = YOUR_ADMIN_ROLE_ID
 client_role_id = YOUR_CLIENT_ROLE_ID
-
-[DisplaySettings]
-show_buyer_seller = True
 ```
 
-### 4. Run the Bot
+`[EmbedSettings]` controls embed colours, text and images; `[DisplaySettings]` decides whether buyer and seller roles are shown.
 
-Start the bot using Python:
+Then:
+
+1. Enable the intents in the portal (including **Message Content** if your discord.py version needs it).
+2. Invite the bot with the `bot` and `applications.commands` scopes.
+3. Start it:
 
 ```bash
 python main.py
 ```
 
----
+4. Publish the panel with `/automm-panel` in your intake channel.
 
-## 🛠️ Slash Commands
+> [!IMPORTANT]
+> `config.ini` holds the bot token and the Tatum key. Never commit it; if it leaks, anyone can move funds or control the bot. Rotate both credentials immediately.
 
-- **/automm-panel**: Displays the interactive setup embed panel (Admin only).
-- **/transcript**: Generates and sends a complete HTML chat transcript of the current channel.
-- **/release**: Manually release LTC for a specific deal ID to a custom address (Admin only).
-- **/delete**: Safe-deletes the current transaction channel after 5 seconds (Admin only).
-- **/profile**: Displays P2P statistics for a specific server member (Spent/Earned USD volume).
-- **/statistics**: Shows total deals completed and overall USD volume in the server.
-- **/about**: Displays technical specifications, uptime, CPU/RAM usage, and bot information.
+### Commands
 
----
+| Command | Who | What it does |
+|---|---|---|
+| `/automm-panel` | Admin | Publishes the deal creation panel |
+| `/transcript` | Everyone | Generates and sends an HTML transcript of the current channel |
+| `/release` | Admin | Manually releases LTC for a deal ID to an address |
+| `/delete` | Admin | Deletes the transaction channel after 5 seconds |
+| `/profile` | Everyone | A member's profile and USD bought/sold volume |
+| `/statistics` | Everyone | Completed deals and total USD volume for the server |
+| `/about` | Everyone | Specs, uptime and CPU/RAM usage |
 
-## 📜 License
+### Project structure
 
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+```text
+TrustMM-Discord-Bot/
+├── main.py             # Bot, panel, modals, commands and deal flow
+├── utils.py            # Tatum, Coinbase, LTC validation and JSON storage
+├── requirements.txt
+├── config.ini.example  # Configuration template
+├── .gitignore
+├── LICENSE
+└── README.md
+```
 
-### License Summary
+### Security and responsibility
 
-1. **Free use**: Personal, educational and also commercial.
-2. **Forks & Modifications**: Permitted on public development platforms (such as GitHub).
-3. **Copyleft**: If you distribute copies or modified versions, you must publish their source code under the same license (GPL-3.0).
-4. **Attribution**: Keep the copyright notices and the name of **Alberto Ortiz** in the source code.
+- **Fund custody**: during a deal, the LTC sits in an address controlled by the bot. A bug in the code, the host or the keys can cause **total loss**. Start with minimal amounts or a test network.
+- **Keys and token**: keep `config.ini` outside the repository with restricted permissions. The Tatum key can broadcast transactions.
+- **Addresses**: double-check the payout address with the seller over a separate channel; the bot validates the format, not the owner.
+- **Legality**: running an escrow service may carry tax, anti-money-laundering or licensing obligations in your country. Check the applicable rules before using real funds.
+- **No warranty**: the project is provided as-is, with no support and no liability for losses arising from its use.
 
-For more details, see the [LICENSE](LICENSE) file.
+### License
+
+**GNU General Public License v3.0 (GPL-3.0)** — see [LICENSE](LICENSE). Copies or modified versions must be distributed under the same license and keep the attribution to **Alberto Ortiz**.
